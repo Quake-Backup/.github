@@ -39,3 +39,7 @@ To suggest a new repository for the backup archive:
 ---
 
 ## ⚖️ Legal Disclaimer
+
+This organization operates strictly as a non-profit **digital archive for educational and preservation purposes** under fair use. All repositories retain their original open-source licenses (GPL, MIT, etc.) and ownership headers. If you are a copyright holder or a developer who wishes to have their code removed from this backup, please contact us by opening an Issue in this repository.
+
+*"In the retro-dev world, nothing is ever truly lost if someone keeps a backup."*
