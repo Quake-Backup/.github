@@ -1,0 +1,29 @@
+name: Weekly Sync
+
+on:
+  schedule:
+    - cron: '0 12 * * 1'  # Every Monday 12 PM UTC
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Sync forks
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          chmod +x repo-sync.sh
+          ./repo-sync.sh --auto-skip-gone
+
+      - name: Commit updated skip list
+        run: |
+          git config user.name "sync-bot"
+          git config user.email "bot@quake-backup"
+          if [[ -n "$(git status --porcelain .sync-skip.conf 2>/dev/null)" ]]; then
+            git add .sync-skip.conf
+            git commit -m "auto: add repos with deleted upstream"
+            git push
+          fi
