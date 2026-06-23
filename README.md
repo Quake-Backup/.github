@@ -1,45 +1,81 @@
-# 🏛️ Quake-Backup
+# Quake-Backup/.github
 
-Welcome to **Quake-Backup**, a digital preservation initiative and centralized archive dedicated to safeguarding the source code, engines, tools, and modifications of the **Boomer Shooter** era.
+Meta-repository containing the organization's automation.
 
-> [!NOTE]  
-> **Our Mission:** Software on the internet is fragile. Developers delete accounts, old forums die, and historical code vanishes. This organization serves as a permanent mirror and safe haven for classic FPS engineering, ensuring that future developers and retro-gaming enthusiasts can always access, study, and compile these digital artifacts.
-
----
-
-## 🛠️ Repository Maintenance & Sync
-
-We strive to keep this archive as relevant and up-to-date as possible:
-
-* **Periodic Syncing:** The forks in this organization are periodically synchronized with their original upstream sources to capture modern bug fixes, compiler updates, and compatibility patches.
-* **High Availability:** If an upstream repository disappears or is deleted, our last synced backup remains online here as a permanent, independent archive.
+For public information about the organization, see [profile/README.md](profile/README.md).
 
 ---
 
-## 📂 Archive Navigation (Core Pillars)
+## Contents
 
-This archive focuses on the engine architecture and source code of the most iconic universes in retro-FPS history:
-
-* **id Software Ecosystem:** Doom, Quake (I, II, III, 4), and Wolfenstein universes.
-* **Build Engine Era:** Duke Nukem 3D, Blood, and Shadow Warrior related code.
-* **GoldSrc & Source Ecosystem:** Half-Life, Opposing Force, and early Valve-related tooling.
-* **Unreal Engine Universe:** Source code, ports, and mods for Unreal, Unreal Tournament (99/2004), and Unreal 2.
-
----
-
-## 🤝 Submissions & Suggestions
-
-Do you know of an obscure source port, an abandoned modding tool, or a legendary repository that risks disappearing from GitHub? **Help us preserve it!**
-
-To suggest a new repository for the backup archive:
-1. Go to the **Issues** tab **of this specific repository** (`.github`) and open a new Issue.
-2. Provide the link to the original repository.
-3. Tell us briefly why it's important to backup (e.g., *"Abandoned since 2018, unique engine implementation"*).
+| File | Purpose |
+|---|---|
+| `repo-sync.sh` | Main fork synchronization script |
+| `scripts/update-sync-issue.sh` | Keeps the tracking issue up to date |
+| `.github/workflows/sync.yml` | Weekly GitHub Actions workflow |
+| `.sync-skip.conf` | List of repos the sync should ignore |
+| `.sync-report.md` | Markdown report generated on each run (gitignored) |
 
 ---
 
-## ⚖️ Legal Disclaimer
+## How it works
 
-This organization operates strictly as a non-profit **digital archive for educational and preservation purposes** under fair use. All repositories retain their original open-source licenses (GPL, MIT, etc.) and ownership headers. If you are a copyright holder or a developer who wishes to have their code removed from this backup, please contact us by opening an Issue in this repository.
+Every Monday at 12:00 UTC the workflow runs automatically (it can also be triggered manually from the Actions tab):
 
-*"In the retro-dev world, nothing is ever truly lost if someone keeps a backup."*
+1. **Sync** — `repo-sync.sh` lists the forks and calls `gh repo sync` in parallel (10 threads). Results are classified as **OK / SKIP / CONFLICT / FAIL**
+2. **Step summary** — the report shows up in the Actions UI
+3. **Update issue** — edits the `[bot] Quake-Backup fork sync report` issue
+4. **Commit skip-list** — if `--auto-skip-gone` added repos, commits automatically
+
+<!-- TODO: add a Performance section (repo count, thread count, expected runtime) -->
+
+---
+
+## How to add a repo to the skip-list
+
+Edit `.sync-skip.conf` and add a line in `Owner/Repo` format:
+
+```
+# .sync-skip.conf - Repos to skip during sync
+Quake-Backup/q2pro
+Quake-Backup/another-orphan-repo
+```
+
+Alternatively, let the script do it automatically with `--auto-skip-gone` (which the workflow does).
+
+---
+
+## How to run the sync locally
+
+Requirement: `gh` CLI authenticated (`gh auth login`).
+
+```bash
+./repo-sync.sh --dry-run              # see what would be synced
+./repo-sync.sh                        # run for real
+./repo-sync.sh --owner AnotherOrg     # different org
+./repo-sync.sh --threads 20           # more parallelism
+./repo-sync.sh --report-file out.md   # write markdown report
+```
+
+---
+
+## How to read the tracking issue
+
+The `[bot] Quake-Backup fork sync report` issue always shows the current state:
+
+- **OK** — all good, no action needed
+- **SKIP** — upstream deleted. If the repo no longer applies, leave it in the skip-list
+- **CONFLICT** — history rewritten. Options: `gh repo sync <repo> --force` (destructive), add it to the skip-list, or manual backup + force
+- **FAIL** — unclassified error. Check the run log in Actions
+
+---
+
+## Required secret
+
+`GH_PAT` — Personal Access Token with `Contents: Read and write` across the org. Configure it in Settings → Secrets and variables → Actions of this repo.
+
+---
+
+## Reporting problems
+
+Open an Issue in this repo.

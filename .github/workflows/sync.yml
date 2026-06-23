@@ -5,6 +5,14 @@ on:
     - cron: '0 12 * * 1'  # Every Monday 12 PM UTC
   workflow_dispatch:
 
+concurrency:
+  group: weekly-sync
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -14,11 +22,44 @@ jobs:
       - name: Sync forks
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
+          GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          chmod +x repo-sync.sh
-          ./repo-sync.sh --auto-skip-gone
+          chmod +x repo-sync.sh scripts/update-sync-issue.sh
+          ./repo-sync.sh --report-file .sync-report.md --auto-skip-gone
+
+      - name: Write step summary
+        if: always()
+        run: |
+          if [[ -f .sync-report.md ]]; then
+            cat .sync-report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "## ⚠️ Sync failed before generating report"
+              echo ""
+              echo "Check the workflow logs for details."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Update tracking issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [[ ! -f .sync-report.md ]]; then
+            cat > .sync-report.md << 'EOF'
+          # 🔄 Fork sync report
+
+          **Last run:** FAILED
+
+          ## Summary
+
+          ⚠️ **Sync failed before completing.** Check the workflow logs for details.
+          EOF
+          fi
+          ./scripts/update-sync-issue.sh .sync-report.md "${{ github.repository }}"
 
       - name: Commit updated skip list
+        if: always()
         run: |
           git config user.name "sync-bot"
           git config user.email "bot@quake-backup"
