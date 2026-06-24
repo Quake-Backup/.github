@@ -3,16 +3,18 @@
 # Commits files to the data/sync-state branch using a worktree.
 # Creates the branch as orphan on first run.
 #
-# Uso: ./scripts/commit-to-data-branch.sh <file1> [file2 ...] -- <message>
-# All files must exist in the current working directory.
+# Uso: ./scripts/commit-to-data-branch.sh <src>[:<dst>] [...] -- <message>
+#   src = path to source file (relative or absolute)
+#   dst = path in the data branch (default: basename of src)
+# All source files must exist.
 
 set -euo pipefail
 
 DATA_BRANCH="data/sync-state"
 GITHUB_WORKSPACE="${GITHUB_WORKSPACE:-$PWD}"
 
-# Parse args: files until '--', then message
-files=()
+# Parse args: file args until '--', then message
+file_args=()
 message=""
 parsing_files=true
 for arg in "$@"; do
@@ -21,7 +23,7 @@ for arg in "$@"; do
         continue
     fi
     if $parsing_files; then
-        files+=("$arg")
+        file_args+=("$arg")
     else
         if [[ -z "$message" ]]; then
             message="$arg"
@@ -31,25 +33,40 @@ for arg in "$@"; do
     fi
 done
 
+message="${message# }"
+
 if [[ -z "$message" ]]; then
     echo "Error: commit message required (use -- to separate files from message)" >&2
     exit 1
 fi
 
-if [[ ${#files[@]} -eq 0 ]]; then
+if [[ ${#file_args[@]} -eq 0 ]]; then
     echo "Error: at least one file required" >&2
     exit 1
 fi
 
+# Parse src:dst pairs
+declare -a sources=()
+declare -a dests=()
+for arg in "${file_args[@]}"; do
+    if [[ "$arg" == *:* ]]; then
+        sources+=("${arg%%:*}")
+        dests+=("${arg#*:}")
+    else
+        sources+=("$arg")
+        dests+=("$(basename "$arg")")
+    fi
+done
+
 # Check all source files exist
-for f in "${files[@]}"; do
-    if [[ ! -f "$f" ]]; then
-        echo "Error: source file not found: $f" >&2
+for src in "${sources[@]}"; do
+    if [[ ! -f "$src" ]]; then
+        echo "Error: source file not found: $src" >&2
         exit 1
     fi
 done
 
-# Configure git identity if not set (needed in fresh checkouts)
+# Configure git identity if not set
 if ! git config user.name >/dev/null 2>&1; then
     git config user.name "sync-bot"
     git config user.email "bot@quake-backup"
@@ -62,8 +79,10 @@ if git ls-remote --heads origin "$DATA_BRANCH" 2>/dev/null | grep -q "$DATA_BRAN
     worktree_dir="/tmp/data-wt-$$"
     git worktree add "$worktree_dir" "$DATA_BRANCH"
 
-    for f in "${files[@]}"; do
-        cp "$f" "$worktree_dir/$f"
+    for i in "${!sources[@]}"; do
+        local_dest="$worktree_dir/${dests[$i]}"
+        mkdir -p "$(dirname "$local_dest")"
+        cp "${sources[$i]}" "$local_dest"
     done
 
     cd "$worktree_dir"
@@ -80,12 +99,12 @@ if git ls-remote --heads origin "$DATA_BRANCH" 2>/dev/null | grep -q "$DATA_BRAN
 else
     echo "Branch $DATA_BRANCH no existe, creando orphan branch..."
 
-    # Create orphan branch
     git switch --orphan "$DATA_BRANCH"
     git rm -rf . 2>/dev/null || true
 
-    for f in "${files[@]}"; do
-        cp "$GITHUB_WORKSPACE/$f" "$f"
+    for i in "${!sources[@]}"; do
+        mkdir -p "$(dirname "${dests[$i]}")"
+        cp "${sources[$i]}" "${dests[$i]}"
     done
 
     git add .

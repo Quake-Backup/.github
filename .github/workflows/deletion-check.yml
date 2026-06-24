@@ -117,5 +117,7 @@ jobs:
 
       - name: Commit snapshot and deletions log to data branch
         run: |
-          bash scripts/commit-to-data-branch.sh /tmp/new-snapshot.txt /tmp/final-deletions.txt -- \
-            "Update sync snapshot and deletion log"
+          bash scripts/commit-to-data-branch.sh \
+            /tmp/new-snapshot.txt:.sync-snapshot.txt \
+            /tmp/final-deletions.txt:.sync-deleted.txt \
+            -- "Update sync snapshot and deletion log"
