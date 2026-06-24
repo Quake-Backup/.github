@@ -1,0 +1,2 @@
+# Repos detected as deleted
+# Format: YYYY-MM-DD HH:MM TZ	Owner/Repo
