@@ -1,19 +1,19 @@
 #!/usr/bin/bash
-# repo-sync.sh — Sincronización y monitoreo de forks de organización
+# repo-sync.sh — Fork sync and org monitoring
 #
-# Modos:
-#   sync (default)        — Sincroniza forks y clasifica resultados
-#   --check-deletions      — Detecta deleciones/adiciones vs snapshot
+# Modes:
+#   sync (default)        — Sync forks and classify results
+#   --check-deletions      — Detect deletions/additions vs snapshot
 #
-# Variables de entorno:
+# Environment variables:
 #   SYNC_OWNER, SYNC_THREADS, SYNC_SKIP_FILE, GH_TOKEN,
 #   SYNC_REPORT_FILE, SYNC_TZ, GITHUB_RUN_URL
 #
-# Uso sync:
+# Sync usage:
 #   ./repo-sync.sh [--owner org] [--threads N] [--skip-file path]
 #                  [--report-file path] [--auto-skip-gone] [--dry-run]
 #
-# Uso check-deletions:
+# Check-deletions usage:
 #   ./repo-sync.sh --check-deletions
 #                   [--snapshot-input path] [--snapshot-output path]
 #                   [--deletions-log path]
@@ -54,20 +54,20 @@ while [[ $# -gt 0 ]]; do
         --auto-skip-gone) auto_skip_gone=true; shift ;;
         --dry-run)       dry_run=true;       shift ;;
         --help|-h)       sed -n '2,15p' "$0"; exit 0 ;;
-        *) echo "Error: opción '$1' desconocida. Usa --help." >&2; exit 1 ;;
+        *) echo "Error: unknown option '$1'. Use --help." >&2; exit 1 ;;
     esac
 done
 
 # --- Pre-checks ---
 for cmd in gh jq; do
     if ! command -v "$cmd" &>/dev/null; then
-        echo "Error: $cmd no está instalado." >&2
+        echo "Error: $cmd is not installed." >&2
         exit 1
     fi
 done
 
 if ! gh auth status &>/dev/null; then
-    echo "Error: No autenticado en GitHub. Configura GH_TOKEN o ejecuta 'gh auth login'." >&2
+    echo "Error: Not authenticated with GitHub. Set GH_TOKEN or run 'gh auth login'." >&2
     exit 1
 fi
 
@@ -200,31 +200,31 @@ run_check_deletions() {
     local now_human
     now_human=$(TZ="$tz" date '+%Y-%m-%d %H:%M %Z')
 
-    # Reporte consola
+    # Console report
     echo ""
     echo "=========================================="
     echo "       DELETION / ADDITION CHECK"
     echo "=========================================="
     if [[ ${#previous[@]} -eq 0 ]]; then
-        echo "Baseline established. ${#current[@]} repos catalogados."
+        echo "Baseline established. ${#current[@]} repos tracked."
         echo "Snapshot: $snapshot_output"
         echo "Deletion log: $deletions_log"
     else
         echo "Previous snapshot: $prev_ts"
         echo "Current snapshot:  $now_ts"
-        echo "Repos actuales: ${#current[@]}"
-        echo "Eliminados:       ${#deleted[@]}"
-        echo "Agregados:        ${#added[@]}"
+        echo "Current repos:     ${#current[@]}"
+        echo "Deleted:           ${#deleted[@]}"
+        echo "Added:             ${#added[@]}"
         echo ""
         if [[ ${#deleted[@]} -gt 0 ]]; then
-            echo "🗑️  Repos eliminados:"
+            echo "🗑️  Deleted repos:"
             for r in "${deleted[@]}"; do
                 echo "  - $r"
             done
         fi
         if [[ ${#added[@]} -gt 0 ]]; then
             echo ""
-            echo "✨ Repos agregados:"
+            echo "✨ Added repos:"
             for r in "${added[@]}"; do
                 echo "  + $r"
             done
@@ -232,7 +232,7 @@ run_check_deletions() {
     fi
     echo "=========================================="
 
-    # Reporte markdown: deletions
+    # Markdown report: deletions
     if [[ -n "$deletions_report" ]]; then
         {
             echo "# 🗑️ Fork deletions report"
@@ -247,7 +247,7 @@ run_check_deletions() {
             if [[ ${#previous[@]} -eq 0 ]]; then
                 echo "## Summary"
                 echo ""
-                echo "ℹ️ **Baseline established.** ${#current[@]} repos catalogados. Próximas ejecuciones podrán detectar deleciones."
+                echo "ℹ️ **Baseline established.** ${#current[@]} repos tracked. Future runs will be able to detect deletions."
             else
                 echo "## Summary"
                 echo ""
@@ -265,7 +265,7 @@ run_check_deletions() {
         } > "$deletions_report"
     fi
 
-    # Reporte markdown: additions
+    # Markdown report: additions
     if [[ -n "$additions_report" ]]; then
         {
             echo "# ✨ Fork additions report"
@@ -280,7 +280,7 @@ run_check_deletions() {
             if [[ ${#previous[@]} -eq 0 ]]; then
                 echo "## Summary"
                 echo ""
-                echo "ℹ️ **Baseline established.** ${#current[@]} repos catalogados. Próximas ejecuciones podrán detectar adiciones."
+                echo "ℹ️ **Baseline established.** ${#current[@]} repos tracked. Future runs will be able to detect additions."
             else
                 echo "## Summary"
                 echo ""
@@ -369,7 +369,8 @@ write_report() {
     } > "$report_file"
 
     echo ""
-    echo "Reporte markdown escrito en: $report_file"
+    echo ""
+    echo "Markdown report written to: $report_file"
 }
 
 run_sync() {
@@ -386,7 +387,7 @@ run_sync() {
         done < "$skip_file"
     fi
 
-    echo "Obteniendo forks de $owner..."
+    echo "Getting forks of $owner..."
     local -a repos=()
     local page=1
     while [[ $page -le $max_pages ]]; do
@@ -404,7 +405,7 @@ run_sync() {
 
     local total=${#repos[@]}
     if [[ $total -eq 0 ]]; then
-        echo "No se encontraron forks en $owner."
+        echo "No forks found in $owner."
         write_report
         exit 0
     fi
@@ -418,9 +419,9 @@ run_sync() {
         fi
     done
 
-    echo "Total: $total | A sincronizar: ${#active[@]} | Saltados: ${#skip_hits[@]}"
-    $dry_run && { echo "[DRY-RUN] Abortando."; exit 0; }
-    echo "Hilos: $threads | Logs: $log_dir"
+    echo "Total: $total | To sync: ${#active[@]} | Skipped: ${#skip_hits[@]}"
+    $dry_run && { echo "[DRY-RUN] Aborting."; exit 0; }
+    echo "Threads: $threads | Logs: $log_dir"
     echo "=========================================="
 
     sync_one() {
@@ -474,53 +475,53 @@ run_sync() {
         echo "$repo" >> "$log_dir/${status}.txt"
     done
 
-    echo "✅ Exitosos: $ok"
+    echo "✅ Successful: $ok"
 
     if [[ ${#skip_new[@]} -gt 0 ]]; then
         echo ""
-        echo "⏭️  Saltados (upstream eliminado): ${#skip_new[@]}"
+        echo "⏭️  Skipped (deleted upstream): ${#skip_new[@]}"
         for entry in "${skip_new[@]}"; do
             IFS='|' read -r repo _ <<< "$entry"
             echo "  - $repo"
         done
-        echo "  → Agrégalos a $skip_file para silenciar permanentemente."
+        echo "  → Add them to $skip_file to silence permanently."
 
         if $auto_skip_gone; then
             for entry in "${skip_new[@]}"; do
                 IFS='|' read -r repo _ <<< "$entry"
-                echo "# $(TZ="$tz" date +%Y-%m-%d) - upstream no encontrado" >> "$skip_file"
+                echo "# $(TZ="$tz" date +%Y-%m-%d) - upstream not found" >> "$skip_file"
                 echo "$repo" >> "$skip_file"
             done
-            echo "  → Añadidos automáticamente a $skip_file"
+            echo "  → Auto-added to $skip_file"
         fi
     fi
 
     if [[ ${#conflict[@]} -gt 0 ]]; then
         echo ""
-        echo "⚠️  Conflictos (historial reescrito): ${#conflict[@]}"
+        echo "⚠️  Conflicts (rewritten history): ${#conflict[@]}"
         for entry in "${conflict[@]}"; do
             IFS='|' read -r repo _ <<< "$entry"
             echo "  - $repo"
         done
-        echo "  → Soluciones posibles (por cada repo):"
-        echo "     1. gh repo sync <repo> --force  (pierde cambios locales)"
-        echo "     2. Agregarlo temporalmente a $skip_file"
-        echo "     3. Hacer backup manual (crear branch) antes de forzar"
+        echo "  → Possible solutions (per repo):"
+        echo "     1. gh repo sync <repo> --force  (loses local changes)"
+        echo "     2. Add it temporarily to $skip_file"
+        echo "     3. Make manual backup (create branch) before forcing"
     fi
 
     if [[ ${#fail[@]} -gt 0 ]]; then
         echo ""
-        echo "❌ Fallos no clasificados: ${#fail[@]}"
+        echo "❌ Unclassified failures: ${#fail[@]}"
         for entry in "${fail[@]}"; do
             IFS='|' read -r repo _ <<< "$entry"
-            echo "  - $repo (revisa logs en $log_dir)"
+            echo "  - $repo (check logs in $log_dir)"
         done
     fi
 
     echo ""
     echo "------------------------------------------"
-    echo " Resumen: $ok OK · ${#skip_new[@]} saltados"
-    echo "          ${#conflict[@]} conflictos · ${#fail[@]} fallos"
+    echo " Summary: $ok OK · ${#skip_new[@]} skipped"
+    echo "          ${#conflict[@]} conflicts · ${#fail[@]} failures"
     echo "=========================================="
 
     write_report
