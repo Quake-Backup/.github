@@ -1,0 +1,122 @@
+name: Daily Deletion Check
+
+on:
+  schedule:
+    - cron: '0 16 * * *'  # ~12 PM Chile time (winter UTC-4)
+  workflow_dispatch:
+
+concurrency:
+  group: daily-deletion-check
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Pull previous snapshot from data branch
+        run: |
+          git fetch origin data/sync-state 2>/dev/null || true
+          if git show origin/data/sync-state:.sync-snapshot.txt > /tmp/prev-snapshot.txt 2>/dev/null; then
+            echo "Snapshot anterior cargado desde data/sync-state"
+            head -1 /tmp/prev-snapshot.txt
+          else
+            echo "No hay snapshot anterior, sera first run (baseline)"
+            : > /tmp/prev-snapshot.txt
+          fi
+
+      - name: Pull existing deletions log from data branch
+        run: |
+          if git show origin/data/sync-state:.sync-deleted.txt > /tmp/existing-deletions.txt 2>/dev/null; then
+            echo "Log de deleciones existente cargado"
+            wc -l /tmp/existing-deletions.txt
+          else
+            echo "No hay log de deleciones previo, sera nuevo"
+            : > /tmp/existing-deletions.txt
+          fi
+
+      - name: Run deletion / addition check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x repo-sync.sh scripts/*.sh
+          ./repo-sync.sh --check-deletions \
+            --snapshot-input /tmp/prev-snapshot.txt \
+            --snapshot-output /tmp/new-snapshot.txt \
+            --deletions-log /tmp/new-deletions.txt \
+            --deletions-report /tmp/deletions-report.md \
+            --additions-report /tmp/additions-report.md
+
+      - name: Merge new deletions into existing log
+        run: |
+          if [[ -s /tmp/existing-deletions.txt ]]; then
+            cat /tmp/existing-deletions.txt > /tmp/final-deletions.txt
+            # Append new entries (skip header lines from new-deletions.txt)
+            if [[ -s /tmp/new-deletions.txt ]]; then
+              grep -v '^#' /tmp/new-deletions.txt >> /tmp/final-deletions.txt
+            fi
+          else
+            # No existing log, use new one (which has the header)
+            if [[ -s /tmp/new-deletions.txt ]]; then
+              cp /tmp/new-deletions.txt /tmp/final-deletions.txt
+            else
+              # Empty - just write header
+              {
+                echo "# Repos detected as deleted"
+                echo "# Format: YYYY-MM-DD HH:MM TZ	Owner/Repo"
+              } > /tmp/final-deletions.txt
+            fi
+          fi
+          echo "--- final-deletions.txt ---"
+          cat /tmp/final-deletions.txt
+
+      - name: Write step summary
+        if: always()
+        run: |
+          {
+            if [[ -f /tmp/deletions-report.md ]]; then
+              echo "## 🗑️ Deletions"
+              echo ""
+              cat /tmp/deletions-report.md
+              echo ""
+              echo "---"
+              echo ""
+            fi
+            if [[ -f /tmp/additions-report.md ]]; then
+              echo "## ✨ Additions"
+              echo ""
+              cat /tmp/additions-report.md
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Update deletions issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [[ -f /tmp/deletions-report.md ]]; then
+            ./scripts/update-deletions-issue.sh /tmp/deletions-report.md "${{ github.repository }}"
+          else
+            echo "No hay reporte de deleciones, skip"
+          fi
+
+      - name: Update additions issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [[ -f /tmp/additions-report.md ]]; then
+            ./scripts/update-additions-issue.sh /tmp/additions-report.md "${{ github.repository }}"
+          else
+            echo "No hay reporte de adiciones, skip"
+          fi
+
+      - name: Commit snapshot and deletions log to data branch
+        run: |
+          ./scripts/commit-to-data-branch.sh /tmp/new-snapshot.txt /tmp/final-deletions.txt -- \
+            "Update sync snapshot and deletion log"

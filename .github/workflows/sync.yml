@@ -19,13 +19,28 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Pull latest skip list from data branch
+        run: |
+          git fetch origin data/sync-state 2>/dev/null || true
+          if git show origin/data/sync-state:.sync-skip.conf > .sync-skip.conf 2>/dev/null; then
+            echo "Skip list pulled from data/sync-state"
+          else
+            echo "No remote skip list, using local"
+            [[ -f .sync-skip.conf ]] || cat > .sync-skip.conf << 'EOF'
+          # .sync-skip.conf - Repos to skip during sync
+          # Format: one line per repo (Owner/Repo)
+          # Lines starting with # are comments
+          EOF
+          fi
+
       - name: Sync forks
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
           GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          chmod +x repo-sync.sh scripts/update-sync-issue.sh
-          ./repo-sync.sh --report-file .sync-report.md --auto-skip-gone
+          chmod +x repo-sync.sh scripts/*.sh
+          ./repo-sync.sh --report-file .sync-report.md --auto-skip-gone \
+                         --skip-file .sync-skip.conf
 
       - name: Write step summary
         if: always()
@@ -58,13 +73,11 @@ jobs:
           fi
           ./scripts/update-sync-issue.sh .sync-report.md "${{ github.repository }}"
 
-      - name: Commit updated skip list
-        if: always()
+      - name: Commit updated skip list to data branch
         run: |
-          git config user.name "sync-bot"
-          git config user.email "bot@quake-backup"
           if [[ -n "$(git status --porcelain .sync-skip.conf 2>/dev/null)" ]]; then
-            git add .sync-skip.conf
-            git commit -m "auto: add repos with deleted upstream"
-            git push
+            ./scripts/commit-to-data-branch.sh .sync-skip.conf -- \
+              "Sync skip list with auto-detected upstream-gone repos"
+          else
+            echo "Skip list sin cambios, nada que commitear"
           fi
