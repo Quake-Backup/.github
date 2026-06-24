@@ -77,7 +77,7 @@ parse_snapshot() {
     local -n out=$2
 
     out=()
-    [[ -f "$file" ]] || return 1
+    [[ -f "$file" ]] || return 0
 
     while IFS= read -r line; do
         line="${line%%#*}"
@@ -89,8 +89,8 @@ parse_snapshot() {
 
 snapshot_timestamp() {
     local file="$1"
-    [[ -f "$file" ]] || { echo ""; return; }
-    grep -m1 '^# snapshot:' "$file" | sed 's/^# snapshot:[[:space:]]*//'
+    [[ -f "$file" ]] || { echo ""; return 0; }
+    sed -n 's/^# snapshot:[[:space:]]*//p' "$file" | head -1
 }
 
 write_snapshot_file() {
@@ -102,7 +102,9 @@ write_snapshot_file() {
 
     {
         echo "# snapshot: $timestamp"
-        printf '%s\n' "${repos[@]}"
+        if [[ ${#repos[@]} -gt 0 ]]; then
+            printf '%s\n' "${repos[@]}"
+        fi
     } > "$file"
 }
 

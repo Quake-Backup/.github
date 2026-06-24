@@ -42,7 +42,7 @@ jobs:
 
       - name: Run deletion / addition check
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           bash repo-sync.sh --check-deletions \
             --snapshot-input /tmp/prev-snapshot.txt \
