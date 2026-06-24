@@ -44,8 +44,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          chmod +x repo-sync.sh scripts/*.sh
-          ./repo-sync.sh --check-deletions \
+          bash repo-sync.sh --check-deletions \
             --snapshot-input /tmp/prev-snapshot.txt \
             --snapshot-output /tmp/new-snapshot.txt \
             --deletions-log /tmp/new-deletions.txt \
@@ -100,7 +99,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [[ -f /tmp/deletions-report.md ]]; then
-            ./scripts/update-deletions-issue.sh /tmp/deletions-report.md "${{ github.repository }}"
+            bash scripts/update-deletions-issue.sh /tmp/deletions-report.md "${{ github.repository }}"
           else
             echo "No hay reporte de deleciones, skip"
           fi
@@ -111,12 +110,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [[ -f /tmp/additions-report.md ]]; then
-            ./scripts/update-additions-issue.sh /tmp/additions-report.md "${{ github.repository }}"
+            bash scripts/update-additions-issue.sh /tmp/additions-report.md "${{ github.repository }}"
           else
             echo "No hay reporte de adiciones, skip"
           fi
 
       - name: Commit snapshot and deletions log to data branch
         run: |
-          ./scripts/commit-to-data-branch.sh /tmp/new-snapshot.txt /tmp/final-deletions.txt -- \
+          bash scripts/commit-to-data-branch.sh /tmp/new-snapshot.txt /tmp/final-deletions.txt -- \
             "Update sync snapshot and deletion log"

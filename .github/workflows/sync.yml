@@ -38,9 +38,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_PAT }}
           GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          chmod +x repo-sync.sh scripts/*.sh
-          ./repo-sync.sh --report-file .sync-report.md --auto-skip-gone \
-                         --skip-file .sync-skip.conf
+          bash repo-sync.sh --report-file .sync-report.md --auto-skip-gone \
+                            --skip-file .sync-skip.conf
 
       - name: Write step summary
         if: always()
@@ -71,12 +70,12 @@ jobs:
           ⚠️ **Sync failed before completing.** Check the workflow logs for details.
           EOF
           fi
-          ./scripts/update-sync-issue.sh .sync-report.md "${{ github.repository }}"
+          bash scripts/update-sync-issue.sh .sync-report.md "${{ github.repository }}"
 
       - name: Commit updated skip list to data branch
         run: |
           if [[ -n "$(git status --porcelain .sync-skip.conf 2>/dev/null)" ]]; then
-            ./scripts/commit-to-data-branch.sh .sync-skip.conf -- \
+            bash scripts/commit-to-data-branch.sh .sync-skip.conf -- \
               "Sync skip list with auto-detected upstream-gone repos"
           else
             echo "Skip list sin cambios, nada que commitear"
