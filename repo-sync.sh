@@ -451,9 +451,11 @@ run_sync() {
 
     for f in "$log_dir"/*.result; do
         [[ -f "$f" ]] || continue
-        read -r status < "$f"
-        read -r repo < "$f"
-        err=$(tail -1 "$f" 2>/dev/null || true)
+        local -a lines
+        mapfile -t lines < "$f"
+        local status="${lines[0]:-}"
+        local repo="${lines[1]:-}"
+        local err="${lines[2]:-}"
         [[ "$err" == "$status" || "$err" == "$repo" ]] && err=""
 
         case "$status" in
