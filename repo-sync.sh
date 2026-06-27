@@ -130,26 +130,15 @@ append_deletions_log() {
 # --- Repo listing ---
 list_repos() {
     local -a repos=()
-    local page=1
-
-    while [[ $page -le $max_pages ]]; do
-        local json
-        if ! json=$(gh repo list "$owner" --limit "$per_page" --page "$page" \
-                      --fork --json nameWithOwner); then
-            echo "Error: 'gh repo list' failed for $owner (page $page) — see gh error above." >&2
-            return 1
-        fi
-        local count
-        if ! count=$(printf '%s' "$json" | jq '. | length' 2>/dev/null); then
-            echo "Error: unexpected response from gh for $owner (page $page): $json" >&2
-            return 1
-        fi
-        [[ $count -eq 0 ]] && break
-        while IFS= read -r r; do
-            repos+=("$r")
-        done < <(printf '%s' "$json" | jq -r '.[].nameWithOwner')
-        ((page++))
-    done
+    local json
+    if ! json=$(gh repo list "$owner" --limit $((per_page * max_pages)) \
+                  --fork --json nameWithOwner); then
+        echo "Error: 'gh repo list' failed for $owner — see gh error above." >&2
+        return 1
+    fi
+    while IFS= read -r r; do
+        repos+=("$r")
+    done < <(printf '%s' "$json" | jq -r '.[].nameWithOwner')
 
     printf '%s\n' "${repos[@]}"
 }
@@ -395,25 +384,15 @@ run_sync() {
 
     echo "Getting forks of $owner..."
     local -a repos=()
-    local page=1
-    while [[ $page -le $max_pages ]]; do
-        local json
-        if ! json=$(gh repo list "$owner" --limit "$per_page" --page "$page" \
-                      --fork --json nameWithOwner); then
-            echo "Error: 'gh repo list' failed for $owner (page $page) — see gh error above." >&2
-            exit 1
-        fi
-        local count
-        if ! count=$(printf '%s' "$json" | jq '. | length' 2>/dev/null); then
-            echo "Error: unexpected response from gh for $owner (page $page): $json" >&2
-            exit 1
-        fi
-        [[ $count -eq 0 ]] && break
-        while IFS= read -r r; do
-            repos+=("$r")
-        done < <(printf '%s' "$json" | jq -r '.[].nameWithOwner')
-        ((page++))
-    done
+    local json
+    if ! json=$(gh repo list "$owner" --limit $((per_page * max_pages)) \
+                  --fork --json nameWithOwner); then
+        echo "Error: 'gh repo list' failed for $owner — see gh error above." >&2
+        exit 1
+    fi
+    while IFS= read -r r; do
+        repos+=("$r")
+    done < <(printf '%s' "$json" | jq -r '.[].nameWithOwner')
 
     local total=${#repos[@]}
     if [[ $total -eq 0 ]]; then
@@ -478,7 +457,7 @@ run_sync() {
         [[ "$err" == "$status" || "$err" == "$repo" ]] && err=""
 
         case "$status" in
-            OK)       ((ok++)) ;;
+            OK)       ok=$((ok + 1)) ;;
             FAIL)     fail+=("${repo}|${err}") ;;
             SKIP)     skip_new+=("${repo}|${err}") ;;
             CONFLICT) conflict+=("${repo}|${err}") ;;
