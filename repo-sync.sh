@@ -134,14 +134,20 @@ list_repos() {
 
     while [[ $page -le $max_pages ]]; do
         local json
-        json=$(gh repo list "$owner" --limit "$per_page" --page "$page" \
-                  --fork --json nameWithOwner 2>/dev/null)
+        if ! json=$(gh repo list "$owner" --limit "$per_page" --page "$page" \
+                      --fork --json nameWithOwner); then
+            echo "Error: 'gh repo list' failed for $owner (page $page) — see gh error above." >&2
+            return 1
+        fi
         local count
-        count=$(echo "$json" | jq '. | length')
+        if ! count=$(printf '%s' "$json" | jq '. | length' 2>/dev/null); then
+            echo "Error: unexpected response from gh for $owner (page $page): $json" >&2
+            return 1
+        fi
         [[ $count -eq 0 ]] && break
         while IFS= read -r r; do
             repos+=("$r")
-        done < <(echo "$json" | jq -r '.[].nameWithOwner')
+        done < <(printf '%s' "$json" | jq -r '.[].nameWithOwner')
         ((page++))
     done
 
@@ -392,14 +398,20 @@ run_sync() {
     local page=1
     while [[ $page -le $max_pages ]]; do
         local json
-        json=$(gh repo list "$owner" --limit "$per_page" --page "$page" \
-                  --fork --json nameWithOwner 2>/dev/null)
+        if ! json=$(gh repo list "$owner" --limit "$per_page" --page "$page" \
+                      --fork --json nameWithOwner); then
+            echo "Error: 'gh repo list' failed for $owner (page $page) — see gh error above." >&2
+            exit 1
+        fi
         local count
-        count=$(echo "$json" | jq '. | length')
+        if ! count=$(printf '%s' "$json" | jq '. | length' 2>/dev/null); then
+            echo "Error: unexpected response from gh for $owner (page $page): $json" >&2
+            exit 1
+        fi
         [[ $count -eq 0 ]] && break
         while IFS= read -r r; do
             repos+=("$r")
-        done < <(echo "$json" | jq -r '.[].nameWithOwner')
+        done < <(printf '%s' "$json" | jq -r '.[].nameWithOwner')
         ((page++))
     done
 
