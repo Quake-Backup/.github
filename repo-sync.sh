@@ -21,6 +21,7 @@
 #                   [--skip-file path]
 
 set -euo pipefail
+trap 'echo "ERROR: line $LINENO, exit $?, command: $BASH_COMMAND" >&2' ERR
 
 # --- Config ---
 owner="${SYNC_OWNER:-Quake-Backup}"
@@ -66,7 +67,7 @@ for cmd in gh jq; do
     fi
 done
 
-if ! gh auth status &>/dev/null; then
+if ! gh auth status; then
     echo "Error: Not authenticated with GitHub. Set GH_TOKEN or run 'gh auth login'." >&2
     exit 1
 fi
@@ -176,24 +177,39 @@ run_check_deletions() {
     local -a previous=()
     parse_snapshot "$snapshot_input" previous
 
-    local -a current
-    mapfile -t current < <(list_repos)
+    local -a current=()
+    if ! mapfile -t current < <(list_repos); then
+        echo "Error: failed to load current repos from gh" >&2
+        return 1
+    fi
 
     local -a deleted=() added=()
     compute_diff previous current deleted added
 
-    write_snapshot_file "$snapshot_output" "${current[@]}"
+    if ! write_snapshot_file "$snapshot_output" "${current[@]}"; then
+        echo "Error: failed to write snapshot to $snapshot_output" >&2
+        return 1
+    fi
 
     if [[ ${#deleted[@]} -gt 0 ]]; then
         append_deletions_log "$deletions_log" "${deleted[@]}"
     fi
 
-    local prev_ts
-    prev_ts=$(snapshot_timestamp "$snapshot_input")
+    local prev_ts=""
+    if ! prev_ts=$(snapshot_timestamp "$snapshot_input"); then
+        echo "Error: failed to read snapshot timestamp from $snapshot_input" >&2
+        return 1
+    fi
     local now_ts
-    now_ts=$(TZ="$tz" date '+%Y-%m-%dT%H:%M:%S%z')
+    if ! now_ts=$(TZ="$tz" date '+%Y-%m-%dT%H:%M:%S%z'); then
+        echo "Error: failed to get current timestamp" >&2
+        return 1
+    fi
     local now_human
-    now_human=$(TZ="$tz" date '+%Y-%m-%d %H:%M %Z')
+    if ! now_human=$(TZ="$tz" date '+%Y-%m-%d %H:%M %Z'); then
+        echo "Error: failed to get human timestamp" >&2
+        return 1
+    fi
 
     # Console report
     echo ""
