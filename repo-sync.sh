@@ -21,6 +21,7 @@
 #                   [--skip-file path]
 
 set -euo pipefail
+set -E
 trap 'echo "ERROR: line $LINENO, exit $?, command: $BASH_COMMAND" >&2' ERR
 
 # --- Config ---
@@ -158,7 +159,9 @@ compute_diff() {
 
     _del=()
     for r in "${_prev[@]}"; do
-        [[ -z "${_curr_set[$r]:-}" ]] && _del+=("$r")
+        if [[ -z "${_curr_set[$r]:-}" ]]; then
+            _del+=("$r")
+        fi
     done
 
     declare -A _prev_set
@@ -168,7 +171,9 @@ compute_diff() {
 
     _add=()
     for r in "${_curr[@]}"; do
-        [[ -z "${_prev_set[$r]:-}" ]] && _add+=("$r")
+        if [[ -z "${_prev_set[$r]:-}" ]]; then
+            _add+=("$r")
+        fi
     done
 }
 
