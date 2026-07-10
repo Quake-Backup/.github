@@ -26,7 +26,6 @@ trap 'echo "ERROR: line $LINENO, exit $?, command: $BASH_COMMAND" >&2' ERR
 # --- Config ---
 owner="${SYNC_OWNER:-Quake-Backup}"
 per_page="${SYNC_PER_PAGE:-100}"
-max_pages="${SYNC_MAX_PAGES:-10}"
 threads="${SYNC_THREADS:-10}"
 skip_file="${SYNC_SKIP_FILE:-./.sync-skip.conf}"
 report_file="${SYNC_REPORT_FILE:-}"
@@ -132,18 +131,42 @@ append_deletions_log() {
     done
 }
 
-# --- Repo listing ---
+# --- Repo listing with dynamic pagination ---
 list_repos() {
     local -a repos=()
-    local json
-    if ! json=$(gh repo list "$owner" --limit $((per_page * max_pages)) \
-                  --fork --json nameWithOwner); then
-        echo "Error: 'gh repo list' failed for $owner — see gh error above." >&2
-        return 1
-    fi
-    while IFS= read -r r; do
-        repos+=("$r")
-    done < <(printf '%s' "$json" | jq -r '.[].nameWithOwner')
+    local page=1
+    local batch_count=0
+    
+    echo "Fetching repos (paginating through all results)..."
+    
+    while true; do
+        local json
+        if ! json=$(gh repo list "$owner" --page "$page" --limit "$per_page" \
+                      --fork --json nameWithOwner); then
+            echo "Error: 'gh repo list' failed for $owner at page $page — see gh error above." >&2
+            return 1
+        fi
+        
+        # Extract repos from this page
+        local page_repos
+        page_repos=$(printf '%s' "$json" | jq -r '.[].nameWithOwner')
+        
+        # Check if we got any results
+        if [[ -z "$page_repos" ]]; then
+            echo "Reached end of results at page $page"
+            break
+        fi
+        
+        # Add repos from this page
+        while IFS= read -r r; do
+            [[ -n "$r" ]] && repos+=("$r")
+        done <<< "$page_repos"
+        
+        batch_count=$((page * per_page))
+        echo "  Page $page: loaded repos (total so far: ${#repos[@]})"
+        
+        ((page++))
+    done
 
     printf '%s\n' "${repos[@]}"
 }
@@ -408,15 +431,10 @@ run_sync() {
 
     echo "Getting forks of $owner..."
     local -a repos=()
-    local json
-    if ! json=$(gh repo list "$owner" --limit $((per_page * max_pages)) \
-                  --fork --json nameWithOwner); then
-        echo "Error: 'gh repo list' failed for $owner — see gh error above." >&2
+    if ! mapfile -t repos < <(list_repos); then
+        echo "Error: failed to list repos from gh" >&2
         exit 1
     fi
-    while IFS= read -r r; do
-        repos+=("$r")
-    done < <(printf '%s' "$json" | jq -r '.[].nameWithOwner')
 
     local total=${#repos[@]}
     if [[ $total -eq 0 ]]; then
