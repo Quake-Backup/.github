@@ -1,4 +1,5 @@
-# snapshot: 2026-07-09T13:58:08-0400
+# snapshot: 2026-07-10T13:48:55-0400
+Quake-Backup/MuffMode
 Quake-Backup/vkQuake
 Quake-Backup/quetoo
 Quake-Backup/q2repro
@@ -80,15 +81,23 @@ Quake-Backup/qdos
 Quake-Backup/inter-doom
 Quake-Backup/GladiatorBot-reverse
 Quake-Backup/3zb2-zigflag
+Quake-Backup/PakFu
 Quake-Backup/VibeStudio
 Quake-Backup/OpenPREY
+Quake-Backup/QuakeNavySeals
 Quake-Backup/q3js
+Quake-Backup/QuakeRallyArchive
+Quake-Backup/QuakeCommandArchive
+Quake-Backup/QuakeArchiveSearch
 Quake-Backup/php-quake-map
 Quake-Backup/qwfwd
 Quake-Backup/ezquake.com
 Quake-Backup/Quake4SDK
+Quake-Backup/Quake2BotArchive
+Quake-Backup/daikatana-restoration-project
 Quake-Backup/Wwasm
 Quake-Backup/blender-q2md2-importer
+Quake-Backup/daikatana
 Quake-Backup/ut99-server
 Quake-Backup/Q2RTX
 Quake-Backup/idtecharchives
@@ -108,9 +117,16 @@ Quake-Backup/gmqcc
 Quake-Backup/quake_authmdl
 Quake-Backup/Raze
 Quake-Backup/InstaGibPlus
+Quake-Backup/gamesvr-quake2
+Quake-Backup/Quake2OfficialArchive
+Quake-Backup/TeamFortressQuakeArchive
+Quake-Backup/go-quake2
 Quake-Backup/Quake4BSE
+Quake-Backup/chronon
+Quake-Backup/QuakeBooks
 Quake-Backup/PBCharacterMovement
 Quake-Backup/ZEQ2-Lite
+Quake-Backup/Q3TestAddons
 Quake-Backup/quake2generic
 Quake-Backup/PSXDOOM-RE
 Quake-Backup/Quake-Panzerschrek
@@ -123,6 +139,8 @@ Quake-Backup/vkQuake2
 Quake-Backup/halflife-unified-sdk
 Quake-Backup/q2pro
 Quake-Backup/Duke2Reconstructed
+Quake-Backup/blender_kingpin_models
+Quake-Backup/master-q2
 Quake-Backup/Qwasm
 Quake-Backup/html5-wolfenstein3D
 Quake-Backup/q1k3
@@ -130,6 +148,8 @@ Quake-Backup/GtkRadiant
 Quake-Backup/DOOM-3-BFG
 Quake-Backup/Doom-SNESMusic
 Quake-Backup/Quake-III-Arena
+Quake-Backup/Polyhedron-Engine
+Quake-Backup/CustomQuakeTools
 Quake-Backup/Vmu-doom-port
 Quake-Backup/pyquake
 Quake-Backup/SNES
@@ -137,6 +157,7 @@ Quake-Backup/iortcw
 Quake-Backup/RigelEngine
 Quake-Backup/3DO-Doom-WIP
 Quake-Backup/pakextract
+Quake-Backup/wal
 Quake-Backup/DOOM
 Quake-Backup/idsetup
 Quake-Backup/quake-hexen2-mdl-export-import
@@ -148,8 +169,10 @@ Quake-Backup/Watch_Quake
 Quake-Backup/Half-Life-1-RMF-
 Quake-Backup/quake2-rerelease-dll
 Quake-Backup/bspview
+Quake-Backup/vitaQuakeII
 Quake-Backup/minqlx
 Quake-Backup/WolfensteinCGA
+Quake-Backup/Quake2Sharp
 Quake-Backup/PsyDoom
 Quake-Backup/vkDOOM3
 Quake-Backup/doom-teletext
@@ -167,6 +190,7 @@ Quake-Backup/lambdacube-quake3
 Quake-Backup/Radquake5.0
 Quake-Backup/DOOM-iOS
 Quake-Backup/doom3do
+Quake-Backup/BSP2OBJ
 Quake-Backup/super8
 Quake-Backup/wolf4sdl-3ds
 Quake-Backup/Quake2CTR
@@ -195,14 +219,19 @@ Quake-Backup/quake2-gladiator
 Quake-Backup/Quake2x-LE-src
 Quake-Backup/quake2-q2p
 Quake-Backup/quake2-dreamcast
+Quake-Backup/QuakeViewer
 Quake-Backup/ioq3-renderer-bgfx
+Quake-Backup/steamplay-fteqw
 Quake-Backup/quake-kube
+Quake-Backup/q2textures
 Quake-Backup/richter
 Quake-Backup/Kosm-Classic-FPS-Template-UE4
 Quake-Backup/quake2-for-ps2
 Quake-Backup/quake_map_source-Panzerschrek
 Quake-Backup/quake2-source-archive
+Quake-Backup/MrQuake2
 Quake-Backup/q3lite
+Quake-Backup/CleanFixedQuakeC
 Quake-Backup/quake2-kots
 Quake-Backup/quake2-egl
 Quake-Backup/dm-engine
@@ -225,11 +254,13 @@ Quake-Backup/qrevpak
 Quake-Backup/Quake_For_OSX
 Quake-Backup/lp-public
 Quake-Backup/Quake3ArenaUE4
+Quake-Backup/quake2-neural-upscale
 Quake-Backup/Mark_V
 Quake-Backup/blender-md3
 Quake-Backup/UT2004
 Quake-Backup/Radquakemax
 Quake-Backup/Q3-Model-Tool
+Quake-Backup/q2_map_to_fbx
 Quake-Backup/quake2-gildor
 Quake-Backup/q2vkpt
 Quake-Backup/quake-k210
@@ -245,7 +276,9 @@ Quake-Backup/quake2_nsp
 Quake-Backup/Quake-Mega-Team-Fortress-CE
 Quake-Backup/Quake-Custom-Team-Fortress
 Quake-Backup/megatf-mvdsv-coop
+Quake-Backup/cake
 Quake-Backup/Quake
+Quake-Backup/webquake2
 Quake-Backup/ntcd
 Quake-Backup/docker-quake2
 Quake-Backup/john-carmack-plan
