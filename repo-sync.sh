@@ -23,6 +23,28 @@ set -euo pipefail
 set -E
 trap 'echo "ERROR: line $LINENO, exit $?, command: $BASH_COMMAND" >&2' ERR
 
+# --- Timing helpers ---
+get_duration_seconds() {
+    local start_time=$1
+    local end_time=$2
+    echo $(( (end_time - start_time) ))
+}
+
+format_duration() {
+    local seconds=$1
+    local hours=$(( seconds / 3600 ))
+    local minutes=$(( (seconds % 3600) / 60 ))
+    local secs=$(( seconds % 60 ))
+    
+    if (( hours > 0 )); then
+        printf "%dh %dm %ds" "$hours" "$minutes" "$secs"
+    elif (( minutes > 0 )); then
+        printf "%dm %ds" "$minutes" "$secs"
+    else
+        printf "%ds" "$secs"
+    fi
+}
+
 # --- Config ---
 owner="${SYNC_OWNER:-Quake-Backup}"
 per_page="${SYNC_PER_PAGE:-100}"
@@ -205,6 +227,9 @@ compute_diff() {
 
 # --- Mode: check-deletions ---
 run_check_deletions() {
+    local start_time
+    start_time=$(date +%s)
+    
     local -a previous=()
     parse_snapshot "$snapshot_input" previous
 
@@ -272,6 +297,12 @@ run_check_deletions() {
             done
         fi
     fi
+    
+    local end_time
+    end_time=$(date +%s)
+    local duration
+    duration=$(get_duration_seconds "$start_time" "$end_time")
+    echo "Duration: $(format_duration "$duration")"
     echo "=========================================="
 
     # Markdown report: deletions
@@ -416,6 +447,9 @@ write_report() {
 }
 
 run_sync() {
+    local start_time
+    start_time=$(date +%s)
+    
     log_dir=$(mktemp -d -t sync-gh-XXXXXXXXXX)
     trap 'rm -rf "$log_dir"' EXIT
 
@@ -569,6 +603,12 @@ run_sync() {
     echo "------------------------------------------"
     echo " Summary: $ok OK · ${#skip_new[@]} skipped"
     echo "          ${#conflict[@]} conflicts · ${#fail[@]} failures"
+    
+    local end_time
+    end_time=$(date +%s)
+    local duration
+    duration=$(get_duration_seconds "$start_time" "$end_time")
+    echo " Duration: $(format_duration "$duration")"
     echo "=========================================="
 
     write_report
