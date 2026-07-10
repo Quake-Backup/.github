@@ -18,7 +18,6 @@
 #                   [--snapshot-input path] [--snapshot-output path]
 #                   [--deletions-log path]
 #                   [--deletions-report path] [--additions-report path]
-#                   [--skip-file path]
 
 set -euo pipefail
 set -E
@@ -40,6 +39,8 @@ snapshot_output="./.sync-snapshot.txt"
 deletions_log="./.sync-deleted.txt"
 deletions_report=""
 additions_report=""
+sync_timeout="${SYNC_TIMEOUT:-300}"
+sync_max_retries="${SYNC_MAX_RETRIES:-1}"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -55,6 +56,8 @@ while [[ $# -gt 0 ]]; do
         --additions-report) additions_report="$2"; shift 2 ;;
         --auto-skip-gone) auto_skip_gone=true; shift ;;
         --dry-run)       dry_run=true;       shift ;;
+        --sync-timeout)  sync_timeout="$2";  shift 2 ;;
+        --max-retries)   sync_max_retries="$2"; shift 2 ;;
         --help|-h)       sed -n '2,15p' "$0"; exit 0 ;;
         *) echo "Error: unknown option '$1'. Use --help." >&2; exit 1 ;;
     esac
@@ -434,6 +437,7 @@ run_sync() {
     echo "Total: $total | To sync: ${#active[@]} | Skipped: ${#skip_hits[@]}"
     $dry_run && { echo "[DRY-RUN] Aborting."; exit 0; }
     echo "Threads: $threads | Logs: $log_dir"
+    echo "Sync timeout: ${sync_timeout}s | Max retries: ${sync_max_retries}"
     echo "=========================================="
 
     sync_one() {
@@ -442,11 +446,20 @@ run_sync() {
         local safe="${repo//\//_}"
         local log="$log_dir/${safe}.log"
         local res="$log_dir/${safe}.result"
+        local attempt=0
 
-        if timeout 120 gh repo sync "$repo" >"$log" 2>&1; then
-            printf 'OK\n%s\n' "$repo" > "$res"
-            return 0
-        fi
+        while [[ $attempt -le $sync_max_retries ]]; do
+            if timeout "$sync_timeout" gh repo sync "$repo" >"$log" 2>&1; then
+                printf 'OK\n%s\n' "$repo" > "$res"
+                return 0
+            fi
+            
+            ((attempt++))
+            if [[ $attempt -le $sync_max_retries ]]; then
+                echo "Retry attempt $attempt for $repo..." >> "$log"
+                sleep 5
+            fi
+        done
 
         local err
         err=$(tail -1 "$log" 2>/dev/null || echo "unknown")
@@ -461,6 +474,8 @@ run_sync() {
     }
     export -f sync_one
     export LOG_DIR="$log_dir"
+    export SYNC_TIMEOUT="$sync_timeout"
+    export SYNC_MAX_RETRIES="$sync_max_retries"
 
     printf '%s\n' "${active[@]}" | \
         xargs -P "$threads" -I {} bash -c 'sync_one "$1" "$LOG_DIR"' _ {}
