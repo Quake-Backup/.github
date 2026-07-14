@@ -1,4 +1,12 @@
-# snapshot: 2026-07-13T13:56:28-0400
+# snapshot: 2026-07-14T13:16:40-0400
+Quake-Backup/yquake2remaster
+Quake-Backup/vkQuake
+Quake-Backup/quetoo
+Quake-Backup/openQ4
+Quake-Backup/mvdsv
+Quake-Backup/com.n0n3m4.diii4a
+Quake-Backup/UZDoom
+Quake-Backup/TheForceEngine
 Quake-Backup/quake2-for-ps2
 Quake-Backup/GladiatorBot-reverse
 Quake-Backup/d32xr
@@ -14,21 +22,14 @@ Quake-Backup/SurrealEngine
 Quake-Backup/openQ4-game
 Quake-Backup/ioq3
 Quake-Backup/MuffMode
-Quake-Backup/vkQuake
-Quake-Backup/quetoo
 Quake-Backup/q2repro
-Quake-Backup/openQ4
-Quake-Backup/mvdsv
-Quake-Backup/UZDoom
 Quake-Backup/aprq2-jdolan
-Quake-Backup/TheForceEngine
 Quake-Backup/RealRTCW
 Quake-Backup/quakespasm
 Quake-Backup/QL-SRP
 Quake-Backup/qwprot
 Quake-Backup/NBlood
 Quake-Backup/ironwail
-Quake-Backup/yquake2remaster
 Quake-Backup/yquake2
 Quake-Backup/ref_vk
 Quake-Backup/quakejs-docker
@@ -68,7 +69,6 @@ Quake-Backup/qengine
 Quake-Backup/JoeQuake
 Quake-Backup/jake2
 Quake-Backup/DarkRadiant
-Quake-Backup/com.n0n3m4.diii4a
 Quake-Backup/godot_bsp_importer
 Quake-Backup/fteqw
 Quake-Backup/dhewm3
