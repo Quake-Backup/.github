@@ -1,4 +1,4 @@
-# snapshot: 2026-07-14T13:16:40-0400
+# snapshot: 2026-07-15T13:19:28-0400
 Quake-Backup/yquake2remaster
 Quake-Backup/vkQuake
 Quake-Backup/quetoo
@@ -82,9 +82,11 @@ Quake-Backup/q2proto
 Quake-Backup/qdos
 Quake-Backup/inter-doom
 Quake-Backup/3zb2-zigflag
+Quake-Backup/vitaQuakeIII
 Quake-Backup/PakFu
 Quake-Backup/VibeStudio
 Quake-Backup/OpenPREY
+Quake-Backup/openmohaa
 Quake-Backup/QuakeNavySeals
 Quake-Backup/q3js
 Quake-Backup/QuakeRallyArchive
@@ -185,6 +187,7 @@ Quake-Backup/openffa
 Quake-Backup/qodot-plugin
 Quake-Backup/doomenstein-3d
 Quake-Backup/vkquake-rt
+Quake-Backup/ioq3-for-UrbanTerror-4
 Quake-Backup/Dreamcast-HALFLIFE-PVR-TOOLS
 Quake-Backup/planet_quake
 Quake-Backup/lambdacube-quake3
