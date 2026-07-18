@@ -1,4 +1,4 @@
-# snapshot: 2026-07-17T13:14:30-0400
+# snapshot: 2026-07-18T12:59:38-0400
 Quake-Backup/yquake2remaster
 Quake-Backup/vkQuake
 Quake-Backup/quetoo
@@ -21,6 +21,7 @@ Quake-Backup/dsda-doom
 Quake-Backup/SurrealEngine
 Quake-Backup/openQ4-game
 Quake-Backup/ioq3
+Quake-Backup/LoopyDOOM
 Quake-Backup/MuffMode
 Quake-Backup/q2repro
 Quake-Backup/aprq2-jdolan
