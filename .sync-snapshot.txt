@@ -1,4 +1,12 @@
-# snapshot: 2026-07-20T14:06:04-0400
+# snapshot: 2026-07-21T13:22:41-0400
+Quake-Backup/vkQuake2
+Quake-Backup/yquake2
+Quake-Backup/q3a_bot_backport_for_q2
+Quake-Backup/openQ4
+Quake-Backup/openQ4-game
+Quake-Backup/com.n0n3m4.diii4a
+Quake-Backup/UZDoom
+Quake-Backup/FnQ3
 Quake-Backup/go-quake2
 Quake-Backup/blender-q2md2-importer
 Quake-Backup/q2admin
@@ -19,15 +27,11 @@ Quake-Backup/TheForceEngine
 Quake-Backup/quake2-for-ps2
 Quake-Backup/vkQuake
 Quake-Backup/quetoo
-Quake-Backup/openQ4
+Quake-Backup/quakespasm-dc
 Quake-Backup/mvdsv
-Quake-Backup/com.n0n3m4.diii4a
-Quake-Backup/UZDoom
 Quake-Backup/d32xr
 Quake-Backup/baseq3a
-Quake-Backup/FnQ3
 Quake-Backup/netradiant-custom
-Quake-Backup/openQ4-game
 Quake-Backup/LoopyDOOM
 Quake-Backup/MuffMode
 Quake-Backup/q2repro
@@ -37,7 +41,6 @@ Quake-Backup/quakespasm
 Quake-Backup/QL-SRP
 Quake-Backup/qwprot
 Quake-Backup/NBlood
-Quake-Backup/yquake2
 Quake-Backup/ref_vk
 Quake-Backup/quakejs-docker
 Quake-Backup/quake-leveldesign-starterkit
@@ -59,7 +62,6 @@ Quake-Backup/REBLIVION
 Quake-Backup/Q2RTXPerimental
 Quake-Backup/Quake4Doom
 Quake-Backup/qfusion
-Quake-Backup/q3a_bot_backport_for_q2
 Quake-Backup/q3vm
 Quake-Backup/Dwasm
 Quake-Backup/Qwasm2
@@ -139,7 +141,6 @@ Quake-Backup/aq2-tng
 Quake-Backup/Qrack
 Quake-Backup/DirectHII
 Quake-Backup/mvdparser
-Quake-Backup/vkQuake2
 Quake-Backup/halflife-unified-sdk
 Quake-Backup/q2pro
 Quake-Backup/Duke2Reconstructed
