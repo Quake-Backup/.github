@@ -1,4 +1,4 @@
-# snapshot: 2026-07-22T13:22:29-0400
+# snapshot: 2026-07-23T13:24:23-0400
 Quake-Backup/vkQuake2
 Quake-Backup/yquake2
 Quake-Backup/q3a_bot_backport_for_q2
@@ -155,6 +155,7 @@ Quake-Backup/Doom-SNESMusic
 Quake-Backup/Quake-III-Arena
 Quake-Backup/Polyhedron-Engine
 Quake-Backup/CustomQuakeTools
+Quake-Backup/QuakeGX-Wii
 Quake-Backup/Vmu-doom-port
 Quake-Backup/pyquake
 Quake-Backup/SNES
