@@ -1,4 +1,10 @@
-# snapshot: 2026-07-27T13:43:44-0400
+# snapshot: 2026-07-28T13:37:02-0400
+Quake-Backup/MuffMode
+Quake-Backup/TrenchBroom
+Quake-Backup/UZDoom
+Quake-Backup/com.n0n3m4.diii4a
+Quake-Backup/dsda-doom
+Quake-Backup/openQ4
 Quake-Backup/QuakeBotArchive
 Quake-Backup/3zb2-zigflag
 Quake-Backup/xonotic
@@ -19,9 +25,6 @@ Quake-Backup/vkQuake2
 Quake-Backup/yquake2
 Quake-Backup/doomcpfx_generator
 Quake-Backup/q3a_bot_backport_for_q2
-Quake-Backup/openQ4
-Quake-Backup/com.n0n3m4.diii4a
-Quake-Backup/UZDoom
 Quake-Backup/FnQ3
 Quake-Backup/go-quake2
 Quake-Backup/blender-q2md2-importer
@@ -30,16 +33,13 @@ Quake-Backup/opentdm
 Quake-Backup/Brutal-Doom-Community-Expansion
 Quake-Backup/ironwail
 Quake-Backup/LibreQuake
-Quake-Backup/dsda-doom
 Quake-Backup/Quake3e
 Quake-Backup/ioq3
-Quake-Backup/TrenchBroom
 Quake-Backup/GladiatorBot-reverse
 Quake-Backup/mvdsv
 Quake-Backup/d32xr
 Quake-Backup/netradiant-custom
 Quake-Backup/LoopyDOOM
-Quake-Backup/MuffMode
 Quake-Backup/q2repro
 Quake-Backup/aprq2-jdolan
 Quake-Backup/RealRTCW
