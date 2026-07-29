@@ -1,4 +1,4 @@
-# snapshot: 2026-07-28T13:37:02-0400
+# snapshot: 2026-07-29T13:16:54-0400
 Quake-Backup/MuffMode
 Quake-Backup/TrenchBroom
 Quake-Backup/UZDoom
@@ -24,6 +24,7 @@ Quake-Backup/openQ4-game
 Quake-Backup/vkQuake2
 Quake-Backup/yquake2
 Quake-Backup/doomcpfx_generator
+Quake-Backup/quakehub-q4master
 Quake-Backup/q3a_bot_backport_for_q2
 Quake-Backup/FnQ3
 Quake-Backup/go-quake2
