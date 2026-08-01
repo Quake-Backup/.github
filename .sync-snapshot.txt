@@ -1,4 +1,4 @@
-# snapshot: 2026-07-31T13:39:55-0400
+# snapshot: 2026-08-01T13:01:34-0400
 Quake-Backup/MuffMode
 Quake-Backup/TrenchBroom
 Quake-Backup/UZDoom
@@ -37,6 +37,7 @@ Quake-Backup/LibreQuake
 Quake-Backup/Quake3e
 Quake-Backup/ioq3
 Quake-Backup/GladiatorBot-reverse
+Quake-Backup/Blender-md5-File-Importer
 Quake-Backup/mvdsv
 Quake-Backup/d32xr
 Quake-Backup/netradiant-custom
