@@ -1,4 +1,6 @@
-# snapshot: 2026-08-08T12:35:30-0400
+# snapshot: 2026-08-09T12:37:17-0400
+Quake-Backup/tech5
+Quake-Backup/Quake_4_Alpha
 Quake-Backup/yquake2remaster
 Quake-Backup/openQ4
 Quake-Backup/docker-ut2004-server
@@ -19,6 +21,8 @@ Quake-Backup/quake2-for-ps2
 Quake-Backup/vkQuake
 Quake-Backup/UZDoom
 Quake-Backup/TrenchBroom
+Quake-Backup/yquake2-xatrix
+Quake-Backup/yquake2-zaero
 Quake-Backup/MuffMode
 Quake-Backup/dsda-doom
 Quake-Backup/QuakeBotArchive
@@ -50,7 +54,7 @@ Quake-Backup/aprq2-jdolan
 Quake-Backup/RealRTCW
 Quake-Backup/QL-SRP
 Quake-Backup/qwprot
-Quake-Backup/ref_vk
+Quake-Backup/yquake2-ref_vk
 Quake-Backup/quakejs-docker
 Quake-Backup/quake-leveldesign-starterkit
 Quake-Backup/ktx
@@ -68,6 +72,7 @@ Quake-Backup/vkQuake3
 Quake-Backup/chocolate-quake
 Quake-Backup/REBLIVION
 Quake-Backup/Q2RTXPerimental
+Quake-Backup/yquake2-ref_gl4
 Quake-Backup/Quake4Doom
 Quake-Backup/qfusion
 Quake-Backup/q3vm
@@ -109,6 +114,7 @@ Quake-Backup/ezquake.com
 Quake-Backup/Quake4SDK
 Quake-Backup/Quake2BotArchive
 Quake-Backup/daikatana-restoration-project
+Quake-Backup/yquake2-3zb2
 Quake-Backup/Wwasm
 Quake-Backup/daikatana
 Quake-Backup/ut99-server
@@ -260,6 +266,7 @@ Quake-Backup/Quake4VR
 Quake-Backup/reaction
 Quake-Backup/phoenix_doom
 Quake-Backup/quakeat-decrypted
+Quake-Backup/IcedTech
 Quake-Backup/it-266-Quake4-Mod
 Quake-Backup/qrevpak
 Quake-Backup/Quake_For_OSX
