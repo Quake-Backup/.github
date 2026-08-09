@@ -65,7 +65,6 @@ format_duration() {
 
 # --- Config ---
 owner="${SYNC_OWNER:-Quake-Backup}"
-per_page="${SYNC_PER_PAGE:-100}"
 threads="${SYNC_THREADS:-10}"
 skip_file="${SYNC_SKIP_FILE:-./.sync-skip.conf}"
 report_file="${SYNC_REPORT_FILE:-}"
@@ -114,10 +113,6 @@ fi
 if ! [[ "$sync_max_retries" =~ ^[0-9]+$ ]] || [[ $sync_max_retries -lt 0 ]]; then
     echo "WARNING: invalid sync_max_retries='$sync_max_retries' — falling back to 1"
     sync_max_retries=1
-fi
-if ! [[ "$per_page" =~ ^[0-9]+$ ]] || [[ $per_page -lt 1 ]]; then
-    echo "WARNING: invalid per_page='$per_page' — falling back to 100"
-    per_page=100
 fi
 
 # --- Pre-checks ---
@@ -192,45 +187,27 @@ append_deletions_log() {
 # --- Repo listing with dynamic pagination + retry/backoff ---
 list_repos() {
     local -a repos=()
-    local page=1
-    local batch_count=0
 
-    echo "Fetching repos (paginating through all results)..."
+    echo "Fetching repos (gh pages internally up to --limit)..."
 
-    while true; do
-        local json
-        if ! json=$(gh repo list "$owner" --page "$page" --limit "$per_page" \
-                      --fork --json nameWithOwner 2>&1); then
-            echo "  Page $page: gh repo list failed, retrying with backoff..." >&2
-            if ! json=$(gh_retry 3 gh repo list "$owner" --page "$page" --limit "$per_page" \
-                          --fork --json nameWithOwner 2>&1); then
-                echo "Error: 'gh repo list' failed for $owner at page $page after retries." >&2
-                echo "  $json" >&2
-                return 1
-            fi
+    local json
+    if ! json=$(gh repo list "$owner" --limit 1000 --fork \
+                  --json nameWithOwner 2>&1); then
+        echo "  gh repo list failed, retrying with backoff..." >&2
+        if ! json=$(gh_retry 3 gh repo list "$owner" --limit 1000 --fork \
+                      --json nameWithOwner 2>&1); then
+            echo "Error: 'gh repo list' failed for $owner after retries." >&2
+            echo "  $json" >&2
+            return 1
         fi
-        
-        # Extract repos from this page
-        local page_repos
-        page_repos=$(printf '%s' "$json" | jq -r '.[].nameWithOwner')
-        
-        # Check if we got any results
-        if [[ -z "$page_repos" ]]; then
-            echo "Reached end of results at page $page"
-            break
-        fi
-        
-        # Add repos from this page
-        while IFS= read -r r; do
-            [[ -n "$r" ]] && repos+=("$r")
-        done <<< "$page_repos"
-        
-        batch_count=$((page * per_page))
-        echo "  Page $page: loaded repos (total so far: ${#repos[@]})"
-        
-        ((page++))
-    done
+    fi
 
+    # Sanitize and collect results
+    while IFS= read -r r; do
+        [[ -n "$r" ]] && repos+=("$r")
+    done <<< "$(printf '%s' "$json" | jq -r '.[].nameWithOwner')"
+
+    echo "Loaded ${#repos[@]} repos"
     printf '%s\n' "${repos[@]}"
 }
 
