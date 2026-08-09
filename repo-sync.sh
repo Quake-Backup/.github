@@ -188,7 +188,7 @@ append_deletions_log() {
 list_repos() {
     local -a repos=()
 
-    echo "Fetching repos (gh pages internally up to --limit)..."
+    echo "Fetching repos (gh pages internally up to --limit)..." >&2
 
     local json
     if ! json=$(gh repo list "$owner" --limit 1000 --fork \
@@ -207,7 +207,7 @@ list_repos() {
         [[ -n "$r" ]] && repos+=("$r")
     done <<< "$(printf '%s' "$json" | jq -r '.[].nameWithOwner')"
 
-    echo "Loaded ${#repos[@]} repos"
+    echo "Loaded ${#repos[@]} repos" >&2
     printf '%s\n' "${repos[@]}"
 }
 
