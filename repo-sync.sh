@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 # repo-sync.sh — Fork sync and org monitoring
 #
 # Modes:
@@ -22,6 +22,24 @@
 set -euo pipefail
 set -E
 trap 'echo "ERROR: line $LINENO, exit $?, command: $BASH_COMMAND" >&2' ERR
+
+# --- Small helpers ---
+gh_retry() {
+    # Usage: gh_retry <max_attempts> <cmd...>
+    local max_attempts=${1:-3}; shift
+    local attempt=1
+    local delay=2
+    while true; do
+        if "$@"; then
+            return 0
+        fi
+        if (( attempt >= max_attempts )); then
+            return 1
+        fi
+        sleep $((delay * attempt))
+        attempt=$((attempt + 1))
+    done
+}
 
 # --- Timing helpers ---
 get_duration_seconds() {
@@ -84,10 +102,28 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# --- Sanitize numeric inputs ---
+if ! [[ "$threads" =~ ^[0-9]+$ ]] || [[ $threads -lt 1 ]]; then
+    echo "WARNING: invalid threads='$threads' — falling back to 10"
+    threads=10
+fi
+if ! [[ "$sync_timeout" =~ ^[0-9]+$ ]] || [[ $sync_timeout -lt 1 ]]; then
+    echo "WARNING: invalid sync_timeout='$sync_timeout' — falling back to 300"
+    sync_timeout=300
+fi
+if ! [[ "$sync_max_retries" =~ ^[0-9]+$ ]] || [[ $sync_max_retries -lt 0 ]]; then
+    echo "WARNING: invalid sync_max_retries='$sync_max_retries' — falling back to 1"
+    sync_max_retries=1
+fi
+if ! [[ "$per_page" =~ ^[0-9]+$ ]] || [[ $per_page -lt 1 ]]; then
+    echo "WARNING: invalid per_page='$per_page' — falling back to 100"
+    per_page=100
+fi
+
 # --- Pre-checks ---
 for cmd in gh jq; do
     if ! command -v "$cmd" &>/dev/null; then
-        echo "Error: $cmd is not installed." >&2
+        echo "Error: $cmd is not installed. Please install it (gh: https://cli.github.com/, jq: https://jqlang.github.io/jq/)." >&2
         exit 1
     fi
 done
@@ -153,20 +189,25 @@ append_deletions_log() {
     done
 }
 
-# --- Repo listing with dynamic pagination ---
+# --- Repo listing with dynamic pagination + retry/backoff ---
 list_repos() {
     local -a repos=()
     local page=1
     local batch_count=0
-    
+
     echo "Fetching repos (paginating through all results)..."
-    
+
     while true; do
         local json
         if ! json=$(gh repo list "$owner" --page "$page" --limit "$per_page" \
-                      --fork --json nameWithOwner); then
-            echo "Error: 'gh repo list' failed for $owner at page $page — see gh error above." >&2
-            return 1
+                      --fork --json nameWithOwner 2>&1); then
+            echo "  Page $page: gh repo list failed, retrying with backoff..." >&2
+            if ! json=$(gh_retry 3 gh repo list "$owner" --page "$page" --limit "$per_page" \
+                          --fork --json nameWithOwner 2>&1); then
+                echo "Error: 'gh repo list' failed for $owner at page $page after retries." >&2
+                echo "  $json" >&2
+                return 1
+            fi
         fi
         
         # Extract repos from this page
