@@ -405,6 +405,7 @@ ok=0
 fail=()      # formato: "repo|err"
 skip_new=()  # formato: "repo|err"
 conflict=()  # formato: "repo|err"
+wf_scope=()  # formato: "repo|err"
 
 write_report() {
     [[ -z "$report_file" ]] && return 0
@@ -427,6 +428,7 @@ write_report() {
         echo "- ✅ **$ok** synced"
         echo "- ⏭️ **${#skip_new[@]}** skipped (deleted upstream)"
         echo "- ⚠️ **${#conflict[@]}** conflicts (rewritten history)"
+        echo "- 🔐 **${#wf_scope[@]}** workflow-scope failures"
         echo "- ❌ **${#fail[@]}** unclassified failures"
         echo ""
 
@@ -452,6 +454,20 @@ write_report() {
             echo ""
         fi
 
+        if [[ ${#wf_scope[@]} -gt 0 ]]; then
+            echo "## Workflow-scope failures"
+            echo ""
+            echo "_Upstream changed workflow files, which require the 'workflow' scope/permission to merge._"
+            echo ""
+            for entry in "${wf_scope[@]}"; do
+                IFS='|' read -r repo err <<< "$entry"
+                echo "- [$repo](https://github.com/$repo)"
+                [[ -n "$err" ]] && echo "  - $err"
+                echo "  - _Fix: grant 'workflow' scope to GH_PAT or enable 'workflows: write'._"
+            done
+            echo ""
+        fi
+
         if [[ ${#fail[@]} -gt 0 ]]; then
             echo "## Failures"
             echo ""
@@ -463,7 +479,7 @@ write_report() {
             echo ""
         fi
 
-        if [[ $ok -gt 0 && ${#skip_new[@]} -eq 0 && ${#conflict[@]} -eq 0 && ${#fail[@]} -eq 0 ]]; then
+        if [[ $ok -gt 0 && ${#skip_new[@]} -eq 0 && ${#conflict[@]} -eq 0 && ${#fail[@]} -eq 0 && ${#wf_scope[@]} -eq 0 ]]; then
             echo "_All repos synced successfully._ 🎉"
             echo ""
         fi
@@ -544,7 +560,9 @@ run_sync() {
         local err
         err=$(tail -1 "$log" 2>/dev/null || echo "unknown")
 
-        if echo "$err" | grep -qiE "not found|404|could not find|does not exist|removed|deleted|upstream.*not"; then
+        if echo "$err" | grep -qiE "workflow scope|workflow changes|require the workflow scope|permission to merge"; then
+            printf 'WORKFLOW_SCOPE\n%s\n%s\n' "$repo" "$err" > "$res"
+        elif echo "$err" | grep -qiE "not found|404|could not find|does not exist|removed|deleted|upstream.*not"; then
             printf 'SKIP\n%s\n%s\n' "$repo" "$err" > "$res"
         elif echo "$err" | grep -qiE "not fast.forward|merge conflict|history diverged|ahead of|behind|force"; then
             printf 'CONFLICT\n%s\n%s\n' "$repo" "$err" > "$res"
@@ -575,10 +593,11 @@ run_sync() {
         [[ "$err" == "$status" || "$err" == "$repo" ]] && err=""
 
         case "$status" in
-            OK)       ok=$((ok + 1)) ;;
-            FAIL)     fail+=("${repo}|${err}") ;;
-            SKIP)     skip_new+=("${repo}|${err}") ;;
-            CONFLICT) conflict+=("${repo}|${err}") ;;
+            OK)              ok=$((ok + 1)) ;;
+            FAIL)            fail+=("${repo}|${err}") ;;
+            SKIP)            skip_new+=("${repo}|${err}") ;;
+            CONFLICT)        conflict+=("${repo}|${err}") ;;
+            WORKFLOW_SCOPE)  wf_scope+=("${repo}|${err}") ;;
         esac
 
         echo "$repo" >> "$log_dir/${status}.txt"
@@ -618,6 +637,18 @@ run_sync() {
         echo "     3. Make manual backup (create branch) before forcing"
     fi
 
+    if [[ ${#wf_scope[@]} -gt 0 ]]; then
+        echo ""
+        echo "🔐 Workflow-scope failures: ${#wf_scope[@]}"
+        for entry in "${wf_scope[@]}"; do
+            IFS='|' read -r repo _ <<< "$entry"
+            echo "  - $repo (upstream changed workflows)"
+        done
+        echo "  → Fix: grant the token the 'workflow' scope/permission"
+        echo "     (Settings → Secrets → GH_PAT must include workflow scope, or"
+        echo "     enable 'workflows: write' in the workflow permissions)."
+    fi
+
     if [[ ${#fail[@]} -gt 0 ]]; then
         echo ""
         echo "❌ Unclassified failures: ${#fail[@]}"
@@ -630,7 +661,7 @@ run_sync() {
     echo ""
     echo "------------------------------------------"
     echo " Summary: $ok OK · ${#skip_new[@]} skipped"
-    echo "          ${#conflict[@]} conflicts · ${#fail[@]} failures"
+    echo "          ${#conflict[@]} conflicts · ${#wf_scope[@]} workflow-scope · ${#fail[@]} failures"
     
     local end_time
     end_time=$(date +%s)
