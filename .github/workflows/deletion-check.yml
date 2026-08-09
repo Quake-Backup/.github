@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: '0 16 * * *'  # ~12 PM Chile time (winter UTC-4)
   workflow_dispatch:
+    inputs:
+      reset_snapshot:
+        description: 'Reset snapshot to a fresh baseline (no diff report)'
+        required: false
+        default: 'false'
+        type: boolean
 
 concurrency:
   group: daily-deletion-check
@@ -51,15 +57,28 @@ jobs:
           fi
 
       - name: Run deletion / addition check
+        env:
+          RESET: ${{ inputs.reset_snapshot }}
         run: |
-          bash repo-sync.sh --check-deletions \
-            --snapshot-input /tmp/prev-snapshot.txt \
-            --snapshot-output /tmp/new-snapshot.txt \
-            --deletions-log /tmp/new-deletions.txt \
-            --deletions-report /tmp/deletions-report.md \
-            --additions-report /tmp/additions-report.md
+          if [[ "$RESET" == "true" ]]; then
+            echo "🏷️  RESET SNAPSHOT mode — writing fresh baseline, no diff report"
+            bash repo-sync.sh --check-deletions --reset-snapshot \
+              --snapshot-input /tmp/prev-snapshot.txt \
+              --snapshot-output /tmp/new-snapshot.txt \
+              --deletions-log /tmp/new-deletions.txt \
+              --deletions-report /tmp/deletions-report.md \
+              --additions-report /tmp/additions-report.md
+          else
+            bash repo-sync.sh --check-deletions \
+              --snapshot-input /tmp/prev-snapshot.txt \
+              --snapshot-output /tmp/new-snapshot.txt \
+              --deletions-log /tmp/new-deletions.txt \
+              --deletions-report /tmp/deletions-report.md \
+              --additions-report /tmp/additions-report.md
+          fi
 
       - name: Merge new deletions into existing log
+        if: inputs.reset_snapshot != 'true'
         run: |
           if [[ -s /tmp/existing-deletions.txt ]]; then
             cat /tmp/existing-deletions.txt > /tmp/final-deletions.txt
@@ -86,23 +105,29 @@ jobs:
         if: always()
         run: |
           {
-            if [[ -f /tmp/deletions-report.md ]]; then
-              echo "## 🗑️ Deletions"
+            if [[ "${{ inputs.reset_snapshot }}" == "true" ]]; then
+              echo "## 🏷️ Reset snapshot"
               echo ""
-              cat /tmp/deletions-report.md
-              echo ""
-              echo "---"
-              echo ""
-            fi
-            if [[ -f /tmp/additions-report.md ]]; then
-              echo "## ✨ Additions"
-              echo ""
-              cat /tmp/additions-report.md
+              echo "Nuevo baseline establecido a partir de los repos actuales."
+            else
+              if [[ -f /tmp/deletions-report.md ]]; then
+                echo "## 🗑️ Deletions"
+                echo ""
+                cat /tmp/deletions-report.md
+                echo ""
+                echo "---"
+                echo ""
+              fi
+              if [[ -f /tmp/additions-report.md ]]; then
+                echo "## ✨ Additions"
+                echo ""
+                cat /tmp/additions-report.md
+              fi
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Update deletions issue
-        if: always()
+        if: always() && inputs.reset_snapshot != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -117,7 +142,7 @@ jobs:
           fi
 
       - name: Update additions issue
-        if: always()
+        if: always() && inputs.reset_snapshot != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -133,11 +158,25 @@ jobs:
 
       - name: Commit snapshot and deletions log to data branch
         run: |
-          if [[ -x scripts/commit-to-data-branch.sh ]]; then
-            bash scripts/commit-to-data-branch.sh \
-              /tmp/new-snapshot.txt:.sync-snapshot.txt \
-              /tmp/final-deletions.txt:.sync-deleted.txt \
-              -- "Update sync snapshot and deletion log"
+          if [[ "${{ inputs.reset_snapshot }}" == "true" ]]; then
+            # Reset: only update the snapshot, preserve existing deletions log
+            if [[ ! -f /tmp/final-deletions.txt ]] && [[ -f /tmp/existing-deletions.txt ]]; then
+              cp /tmp/existing-deletions.txt /tmp/final-deletions.txt
+            fi
+            if [[ -x scripts/commit-to-data-branch.sh ]]; then
+              bash scripts/commit-to-data-branch.sh \
+                /tmp/new-snapshot.txt:.sync-snapshot.txt \
+                -- "Reset sync snapshot to fresh baseline"
+            else
+              echo "⚠️ scripts/commit-to-data-branch.sh not found or not executable — skipping commit."
+            fi
           else
-            echo "⚠️ scripts/commit-to-data-branch.sh not found or not executable — skipping commit."
+            if [[ -x scripts/commit-to-data-branch.sh ]]; then
+              bash scripts/commit-to-data-branch.sh \
+                /tmp/new-snapshot.txt:.sync-snapshot.txt \
+                /tmp/final-deletions.txt:.sync-deleted.txt \
+                -- "Update sync snapshot and deletion log"
+            else
+              echo "⚠️ scripts/commit-to-data-branch.sh not found or not executable — skipping commit."
+            fi
           fi

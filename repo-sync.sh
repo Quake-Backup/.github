@@ -71,6 +71,7 @@ report_file="${SYNC_REPORT_FILE:-}"
 tz="${SYNC_TZ:-America/Santiago}"
 auto_skip_gone=false
 dry_run=false
+reset_snapshot=false
 mode="sync"
 snapshot_input="./.sync-snapshot.txt"
 snapshot_output="./.sync-snapshot.txt"
@@ -93,6 +94,7 @@ while [[ $# -gt 0 ]]; do
         --deletions-report) deletions_report="$2"; shift 2 ;;
         --additions-report) additions_report="$2"; shift 2 ;;
         --auto-skip-gone) auto_skip_gone=true; shift ;;
+        --reset-snapshot) reset_snapshot=true; shift ;;
         --dry-run)       dry_run=true;       shift ;;
         --sync-timeout)  sync_timeout="$2";  shift 2 ;;
         --max-retries)   sync_max_retries="$2"; shift 2 ;;
@@ -247,9 +249,17 @@ compute_diff() {
 run_check_deletions() {
     local start_time
     start_time=$(date +%s)
-    
+
     local -a previous=()
-    parse_snapshot "$snapshot_input" previous
+    if $reset_snapshot; then
+        echo "RESET SNAPSHOT: ignoring previous snapshot, writing new baseline"
+        previous=()
+        deletions_log=""
+        deletions_report=""
+        additions_report=""
+    else
+        parse_snapshot "$snapshot_input" previous
+    fi
 
     local -a current=()
     if ! mapfile -t current < <(list_repos); then
