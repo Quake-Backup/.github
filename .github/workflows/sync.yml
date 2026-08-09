@@ -19,6 +19,17 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Validate GH_PAT token
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          if ! gh auth status 2>&1 | grep -q "Logged in"; then
+            echo "❌ ERROR: GH_PAT token is invalid or expired"
+            echo "Please check Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+          echo "✅ GH_PAT token is valid"
+
       - name: Pull latest skip list from data branch
         run: |
           git fetch origin data/sync-state 2>/dev/null || true

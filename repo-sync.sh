@@ -18,16 +18,36 @@
 #                   [--snapshot-input path] [--snapshot-output path]
 #                   [--deletions-log path]
 #                   [--deletions-report path] [--additions-report path]
-#                   [--skip-file path]
 
 set -euo pipefail
 set -E
 trap 'echo "ERROR: line $LINENO, exit $?, command: $BASH_COMMAND" >&2' ERR
 
+# --- Timing helpers ---
+get_duration_seconds() {
+    local start_time=$1
+    local end_time=$2
+    echo $(( (end_time - start_time) ))
+}
+
+format_duration() {
+    local seconds=$1
+    local hours=$(( seconds / 3600 ))
+    local minutes=$(( (seconds % 3600) / 60 ))
+    local secs=$(( seconds % 60 ))
+    
+    if (( hours > 0 )); then
+        printf "%dh %dm %ds" "$hours" "$minutes" "$secs"
+    elif (( minutes > 0 )); then
+        printf "%dm %ds" "$minutes" "$secs"
+    else
+        printf "%ds" "$secs"
+    fi
+}
+
 # --- Config ---
 owner="${SYNC_OWNER:-Quake-Backup}"
 per_page="${SYNC_PER_PAGE:-100}"
-max_pages="${SYNC_MAX_PAGES:-10}"
 threads="${SYNC_THREADS:-10}"
 skip_file="${SYNC_SKIP_FILE:-./.sync-skip.conf}"
 report_file="${SYNC_REPORT_FILE:-}"
@@ -40,6 +60,8 @@ snapshot_output="./.sync-snapshot.txt"
 deletions_log="./.sync-deleted.txt"
 deletions_report=""
 additions_report=""
+sync_timeout="${SYNC_TIMEOUT:-300}"
+sync_max_retries="${SYNC_MAX_RETRIES:-1}"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -55,6 +77,8 @@ while [[ $# -gt 0 ]]; do
         --additions-report) additions_report="$2"; shift 2 ;;
         --auto-skip-gone) auto_skip_gone=true; shift ;;
         --dry-run)       dry_run=true;       shift ;;
+        --sync-timeout)  sync_timeout="$2";  shift 2 ;;
+        --max-retries)   sync_max_retries="$2"; shift 2 ;;
         --help|-h)       sed -n '2,15p' "$0"; exit 0 ;;
         *) echo "Error: unknown option '$1'. Use --help." >&2; exit 1 ;;
     esac
@@ -129,18 +153,42 @@ append_deletions_log() {
     done
 }
 
-# --- Repo listing ---
+# --- Repo listing with dynamic pagination ---
 list_repos() {
     local -a repos=()
-    local json
-    if ! json=$(gh repo list "$owner" --limit $((per_page * max_pages)) \
-                  --fork --json nameWithOwner); then
-        echo "Error: 'gh repo list' failed for $owner — see gh error above." >&2
-        return 1
-    fi
-    while IFS= read -r r; do
-        repos+=("$r")
-    done < <(printf '%s' "$json" | jq -r '.[].nameWithOwner')
+    local page=1
+    local batch_count=0
+    
+    echo "Fetching repos (paginating through all results)..."
+    
+    while true; do
+        local json
+        if ! json=$(gh repo list "$owner" --page "$page" --limit "$per_page" \
+                      --fork --json nameWithOwner); then
+            echo "Error: 'gh repo list' failed for $owner at page $page — see gh error above." >&2
+            return 1
+        fi
+        
+        # Extract repos from this page
+        local page_repos
+        page_repos=$(printf '%s' "$json" | jq -r '.[].nameWithOwner')
+        
+        # Check if we got any results
+        if [[ -z "$page_repos" ]]; then
+            echo "Reached end of results at page $page"
+            break
+        fi
+        
+        # Add repos from this page
+        while IFS= read -r r; do
+            [[ -n "$r" ]] && repos+=("$r")
+        done <<< "$page_repos"
+        
+        batch_count=$((page * per_page))
+        echo "  Page $page: loaded repos (total so far: ${#repos[@]})"
+        
+        ((page++))
+    done
 
     printf '%s\n' "${repos[@]}"
 }
@@ -179,6 +227,9 @@ compute_diff() {
 
 # --- Mode: check-deletions ---
 run_check_deletions() {
+    local start_time
+    start_time=$(date +%s)
+    
     local -a previous=()
     parse_snapshot "$snapshot_input" previous
 
@@ -246,6 +297,12 @@ run_check_deletions() {
             done
         fi
     fi
+    
+    local end_time
+    end_time=$(date +%s)
+    local duration
+    duration=$(get_duration_seconds "$start_time" "$end_time")
+    echo "Duration: $(format_duration "$duration")"
     echo "=========================================="
 
     # Markdown report: deletions
@@ -390,6 +447,9 @@ write_report() {
 }
 
 run_sync() {
+    local start_time
+    start_time=$(date +%s)
+    
     log_dir=$(mktemp -d -t sync-gh-XXXXXXXXXX)
     trap 'rm -rf "$log_dir"' EXIT
 
@@ -405,15 +465,10 @@ run_sync() {
 
     echo "Getting forks of $owner..."
     local -a repos=()
-    local json
-    if ! json=$(gh repo list "$owner" --limit $((per_page * max_pages)) \
-                  --fork --json nameWithOwner); then
-        echo "Error: 'gh repo list' failed for $owner — see gh error above." >&2
+    if ! mapfile -t repos < <(list_repos); then
+        echo "Error: failed to list repos from gh" >&2
         exit 1
     fi
-    while IFS= read -r r; do
-        repos+=("$r")
-    done < <(printf '%s' "$json" | jq -r '.[].nameWithOwner')
 
     local total=${#repos[@]}
     if [[ $total -eq 0 ]]; then
@@ -434,6 +489,7 @@ run_sync() {
     echo "Total: $total | To sync: ${#active[@]} | Skipped: ${#skip_hits[@]}"
     $dry_run && { echo "[DRY-RUN] Aborting."; exit 0; }
     echo "Threads: $threads | Logs: $log_dir"
+    echo "Sync timeout: ${sync_timeout}s | Max retries: ${sync_max_retries}"
     echo "=========================================="
 
     sync_one() {
@@ -442,11 +498,20 @@ run_sync() {
         local safe="${repo//\//_}"
         local log="$log_dir/${safe}.log"
         local res="$log_dir/${safe}.result"
+        local attempt=0
 
-        if timeout 120 gh repo sync "$repo" >"$log" 2>&1; then
-            printf 'OK\n%s\n' "$repo" > "$res"
-            return 0
-        fi
+        while [[ $attempt -le $sync_max_retries ]]; do
+            if timeout "$sync_timeout" gh repo sync "$repo" >"$log" 2>&1; then
+                printf 'OK\n%s\n' "$repo" > "$res"
+                return 0
+            fi
+            
+            ((attempt++))
+            if [[ $attempt -le $sync_max_retries ]]; then
+                echo "Retry attempt $attempt for $repo..." >> "$log"
+                sleep 5
+            fi
+        done
 
         local err
         err=$(tail -1 "$log" 2>/dev/null || echo "unknown")
@@ -461,6 +526,8 @@ run_sync() {
     }
     export -f sync_one
     export LOG_DIR="$log_dir"
+    export SYNC_TIMEOUT="$sync_timeout"
+    export SYNC_MAX_RETRIES="$sync_max_retries"
 
     printf '%s\n' "${active[@]}" | \
         xargs -P "$threads" -I {} bash -c 'sync_one "$1" "$LOG_DIR"' _ {}
@@ -536,6 +603,12 @@ run_sync() {
     echo "------------------------------------------"
     echo " Summary: $ok OK · ${#skip_new[@]} skipped"
     echo "          ${#conflict[@]} conflicts · ${#fail[@]} failures"
+    
+    local end_time
+    end_time=$(date +%s)
+    local duration
+    duration=$(get_duration_seconds "$start_time" "$end_time")
+    echo " Duration: $(format_duration "$duration")"
     echo "=========================================="
 
     write_report
