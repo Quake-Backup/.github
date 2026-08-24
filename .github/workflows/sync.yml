@@ -29,6 +29,18 @@ jobs:
             echo "GH_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> "$GITHUB_ENV"
           fi
 
+      - name: Verify required tools
+        run: |
+          echo "Checking for required commands..."
+          for cmd in gh jq timeout; do
+            if ! command -v "$cmd" &>/dev/null; then
+              echo "❌ Error: $cmd is not available"
+              exit 1
+            else
+              echo "✅ $cmd found: $(which $cmd)"
+            fi
+          done
+
       - name: Pull latest skip list from data branch
         run: |
           git fetch origin data/sync-state 2>/dev/null || true
