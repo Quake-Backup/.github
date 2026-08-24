@@ -118,9 +118,16 @@ if ! [[ "$sync_max_retries" =~ ^[0-9]+$ ]] || [[ $sync_max_retries -lt 0 ]]; the
 fi
 
 # --- Pre-checks ---
-for cmd in gh jq; do
+for cmd in gh jq timeout; do
     if ! command -v "$cmd" &>/dev/null; then
-        echo "Error: $cmd is not installed. Please install it (gh: https://cli.github.com/, jq: https://jqlang.github.io/jq/)." >&2
+        echo "Error: $cmd is not installed. Please install it." >&2
+        if [[ "$cmd" == "timeout" ]]; then
+            echo "  → timeout is part of GNU coreutils. Install with: sudo apt-get install coreutils" >&2
+        elif [[ "$cmd" == "gh" ]]; then
+            echo "  → gh: https://cli.github.com/" >&2
+        elif [[ "$cmd" == "jq" ]]; then
+            echo "  → jq: https://jqlang.github.io/jq/" >&2
+        fi
         exit 1
     fi
 done
@@ -129,6 +136,10 @@ if ! gh auth status; then
     echo "Error: Not authenticated with GitHub. Set GH_TOKEN or run 'gh auth login'." >&2
     exit 1
 fi
+
+# --- Get timeout command path ---
+TIMEOUT_CMD=$(command -v timeout)
+export TIMEOUT_CMD
 
 # --- Snapshot helpers ---
 parse_snapshot() {
@@ -545,7 +556,8 @@ run_sync() {
         local attempt=0
 
         while [[ $attempt -le $sync_max_retries ]]; do
-            if timeout "$sync_timeout" gh repo sync "$repo" >"$log" 2>&1; then
+            # Use the exported TIMEOUT_CMD with full path
+            if "$TIMEOUT_CMD" "$SYNC_TIMEOUT" gh repo sync "$repo" >"$log" 2>&1; then
                 printf 'OK\n%s\n' "$repo" > "$res"
                 return 0
             fi
@@ -574,6 +586,7 @@ run_sync() {
     export LOG_DIR="$log_dir"
     export SYNC_TIMEOUT="$sync_timeout"
     export SYNC_MAX_RETRIES="$sync_max_retries"
+    export TIMEOUT_CMD="$TIMEOUT_CMD"
 
     printf '%s\n' "${active[@]}" | \
         xargs -P "$threads" -I {} bash -c 'sync_one "$1" "$LOG_DIR"' _ {}
