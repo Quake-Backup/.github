@@ -1,4 +1,4 @@
-# snapshot: 2026-09-07T16:40:14-0300
+# snapshot: 2026-09-08T16:18:20-0300
 Quake-Backup/quake-rerelease-qc
 Quake-Backup/yquake2-3zb2
 Quake-Backup/darkplaces
