@@ -1,4 +1,4 @@
-# snapshot: 2026-10-22T16:48:26-0300
+# snapshot: 2026-10-23T16:50:09-0300
 Quake-Backup/ktx
 Quake-Backup/LibreQuake
 Quake-Backup/mvdsv
@@ -27,6 +27,7 @@ Quake-Backup/ioq3
 Quake-Backup/RealRTCW
 Quake-Backup/xonotic
 Quake-Backup/jake2
+Quake-Backup/doom64-dc
 Quake-Backup/freedoom
 Quake-Backup/quakespasm
 Quake-Backup/q2dos
