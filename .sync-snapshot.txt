@@ -1,4 +1,4 @@
-# snapshot: 2026-10-30T17:29:55-0300
+# snapshot: 2026-10-31T16:45:57-0300
 Quake-Backup/qwfwd
 Quake-Backup/GBADoom
 Quake-Backup/fbDOOM
@@ -53,6 +53,7 @@ Quake-Backup/qdos
 Quake-Backup/opentdm
 Quake-Backup/ironwail
 Quake-Backup/docker-ut2004-server
+Quake-Backup/Q2classic
 Quake-Backup/quake-rerelease-qc
 Quake-Backup/yquake2-3zb2
 Quake-Backup/QuakeBotArchive
