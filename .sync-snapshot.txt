@@ -1,4 +1,5 @@
-# snapshot: 2026-11-14T17:29:18-0300
+# snapshot: 2026-11-15T17:52:15-0300
+Quake-Backup/dude
 Quake-Backup/dhewm3
 Quake-Backup/com.n0n3m4.diii4a
 Quake-Backup/freedoom
