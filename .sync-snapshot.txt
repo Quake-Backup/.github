@@ -1,4 +1,4 @@
-# snapshot: 2026-11-23T23:46:27-0300
+# snapshot: 2026-11-24T21:25:35-0300
 Quake-Backup/TeamFortressQuakeArchive
 Quake-Backup/QuakeArchiveSearch
 Quake-Backup/q2proto
@@ -35,6 +35,7 @@ Quake-Backup/VibeStudio
 Quake-Backup/q2repro
 Quake-Backup/quakespasm
 Quake-Backup/Brutal-Doom-Community-Expansion
+Quake-Backup/Quake2-PSX-PC
 Quake-Backup/godot_bsp_importer
 Quake-Backup/yquake2-zaero
 Quake-Backup/yquake2-xatrix
@@ -45,6 +46,7 @@ Quake-Backup/vkQuake
 Quake-Backup/com.n0n3m4.diii4a
 Quake-Backup/TheForceEngine
 Quake-Backup/Quake3e
+Quake-Backup/ActionQuake2Archive
 Quake-Backup/dhewm3
 Quake-Backup/ioq3
 Quake-Backup/darkplaces
